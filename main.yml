@@ -1,0 +1,10 @@
+---
+  - name: installing Bamboo on AWS server
+    hosts: server
+    become_method: sudo
+    become_user: root
+    vars:
+      http_port: 22
+
+    tasks:
+      - name: 
