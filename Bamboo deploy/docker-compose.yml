@@ -1,0 +1,26 @@
+version: '2'
+
+services:
+
+  postgres:
+    image: romero/postgres
+    environment:
+      - POSTGRES_PASSWORD=postgresPASS
+      - POSTGRES_USER=initdb
+      - POSTGRES_DATABASE=initdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - "/var/lib/postgresql/data"
+    restart: unless-stopped
+
+  bamboo:
+    image: romero/bamboo
+    links:
+      - postgres
+    ports:
+      - "8085:8085"
+    volumes:
+      - "/usr/src/bamboo"
+      - "/usr/src/bamboo-home"
+    restart: unless-stopped

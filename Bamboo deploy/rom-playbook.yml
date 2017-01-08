@@ -1,0 +1,17 @@
+- name: With the newly provisioned EC2 node configure as bamboo server
+  hosts: webservers
+  become_method: True
+  become_user: ec2-user
+  gather_facts: True
+
+  tasks:
+    - name: copying dockerfiles to the AWS instans
+      copy:
+        src: ./docker-compose.yml
+        dest: /home/ec2-user
+
+    - name: change directory to docker-compose file directory
+      shell: cd /home/ec2-user
+
+    - name: Let's up containers by docker-compose
+      shell: docker-compose up -d
