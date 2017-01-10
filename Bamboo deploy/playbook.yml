@@ -1,10 +1,15 @@
+# usage: 
+# todo: add tasks to check if bamboo container is up, create backup in case of yes
+
+---
 - name: With the newly provisioned EC2 node configure as bamboo server
-  hosts: webservers
-  become_method: True
-  become_user: ec2-user
-  gather_facts: True
-   # vars_files:
-    #  - [ "vars/bambooserver.yml", "vars/defaults.yml" ]
+  hosts: localhost
+  connection: local
+  #become_method: True
+  #become_user: root
+  #gather_facts: True
+   vars_files:
+     - [ "vars/bambooserver.yml", "vars/defaults.yml" ]
     #roles:
     #   - ansiblePrereqs
     #   - ansible
@@ -20,16 +25,23 @@
     - name: 2 Pull Postgres image
       shell: "docker pull romero/postgres"
     - name: 3 Run Postgres container
-      shell: "docker run -d --name postgres -h postgres -p 5432 -v /usr/src/bamboo-home:/var/lib/postgresql/data -e 'POSTGRES_PASSWORD=initdb' -e 'POSTGRES_USER=initdb'  romero/postgres"
+      shell: "docker run -d --name postgres -h postgres -p 5432 -v /Users/ravetikyan/Documents/pg-data:/var/lib/postgresql/data -e 'POSTGRES_PASSWORD=initdb' -e 'POSTGRES_USER=initdb' -e 'POSTGRES_DATABASE=initdb'  romero/postgres"
     #- name: 4) ReCreate bamboo database
-    #  shell: docker exec -it postgres psql -h 127.0.0.1 -p 5432 -U postgres -c "DROP DATABASE IF EXISTS bamboo; CREATE DATABASE bamboo WITH ENCODING 'UNICODE' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0;"
+    #  shell: docker exec -it postgres psql -h (( BAMBOO_SERVER_HOST )) -p 5432 -U postgres -c "DROP DATABASE IF EXISTS bamboo; CREATE DATABASE bamboo WITH ENCODING 'UNICODE' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0;"
     # - name: Grant privileges for bamboo's db user
     #   shell: docker exec -it postgres-bamboo psql -h 127.0.0.1 -p 5432 -U postgres -d bamboo -c "GRANT ALL PRIVILEGES ON DATABASE bamboo TO bamboodbuser;"
     #- name: Upload backed up data into postgres
     #  shell: docker exec -it postgres-bamboo bash -c "psql -U bamboo -d bamboo < /postgres_data/dbDump.dmp" > postgres-load-data.log
     #- name: 4) Update postgres url in bamboo config
-    #  shell: sed -i -e 's/localhost:5432/postgres:5432/g' /usr/src/atlassian/bamboo-home/bamboo.cfg.xml
+    #  shell: sed -i -e 's/localhost:5432/postgres:5432/g' /usr/src/atlassian/bamboo-home/bamboo.cfg.xml 
     - name: 4 Start bamboo container
-      shell: "docker run -d --name bamboo-server -p 8085:8085 --link postgres:postgres -v /usr/src/bamboo-home:/usr/src/bamboo-home romero/bamboo"
+      shell: "docker run -d --name bamboo-server -p 8085:8085 --link postgres:postgres -v /usr/src/bamboo-home romero/bamboo"
+
+    - name: 5 Copying property file to the bamboo-server container
+      shell: "docker cp ./bamboo-init.properties bamboo-server:/usr/src/bamboo/atlassian-bamboo/WEB-INF/classes/"
+
+    #- name: 6 Copying backup files to the web container
+     # shell: docker cp /local/file/path bamboo-server:/usr/src/bamboo-home/
     #- name: 5] Wait for port 8085
     #  wait_for: port=8085 timeout=60 state=started
+    ...

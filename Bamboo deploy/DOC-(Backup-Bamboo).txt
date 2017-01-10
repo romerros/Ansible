@@ -1,0 +1,24 @@
+Step-by-Step Documentation for Deploying Bamboo
+
+Requirements:
+ OS Linux
+ docker
+
+
+1. Pulling backup from learnship.atlassian.net (bamboo ondemad)
+  wget buckup.zip
+
+2. unziping backup file and chenge several files mods
+  cd /PATH/TO/BACKUP/FILE && unzip FILE.ZIP
+  chmod 0600 /PATH/TO/KEY/LICENSE_PRIVATE_DIR/*
+  sed -i -e 's/localhost:5432/postgres:5432/g' /PATH/TO/bamboo-home/bamboo.cfg.xml
+
+
+3. start  bamboo service by ansible
+  ansible=playbook -i INVENTORY_FILE palybook-file-name -tags --limit --vault-password-file -e "remote_user=root "
+
+4. Configuring bamboo by browser
+  Add generated license key for bamboo
+  Anable Elastic Bamboo 
+  Add S3 credentials (keys) for artifacts and ealstic agents
+  Set flag for S3 artifact location for all build plans
