@@ -2,11 +2,26 @@
 
 - name: Backup data on the server
   hosts: web-host
+  remote_user: yourname
   become_method: True
   become_user: root
   gather_facts: True
 
   tasks:
-    name: check is there some files to save from database
-    stat:
-      path: /PATH/TO/DATA/DIR
+    - name: check is there some files to save from database
+      stat:
+        path: /PATH/TO/DATA/DIR
+      register: backfiles
+
+    - name: save backup files
+      copy: src=/PATH/TO/src dest:/PATH/TO/DEST/DIR
+      when: backfiles.stat.exist
+
+    - name: unzip backup zip file 
+      shell: cd /PATH/to/FILE/DIR && unzip  EXPORTED-Backup.zip
+
+    - name: Pulling backup from learnship.atlassian.net (bamboo ondemad)
+      shell: wget backup.zip
+
+    - name: extract backup ZIP into bamboo-home and database folders
+      shell: cd /PATH/to/FILE/DIR && unzip backup.zip -d /PATH/TO/DIR
