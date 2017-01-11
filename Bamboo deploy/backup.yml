@@ -1,0 +1,12 @@
+---
+
+- name: Backup data on the server
+  hosts: web-host
+  become_method: True
+  become_user: root
+  gather_facts: True
+
+  tasks:
+    name: check is there some files to save from database
+    stat:
+      path: /PATH/TO/DATA/DIR
