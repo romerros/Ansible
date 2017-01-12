@@ -1,0 +1,81 @@
+# Descritption: Docker based bamboo server deploymentusing backup from Ondemand bamboo
+# Usage: ansible-playbook -i ./inventories/integration_servers deploy_bamboo_server.yml --vault-password-file=~/.ssh/.vault-pass.txt
+# Maintainer: Hayk Avetisyan
+
+---
+
+  - name: With the newly provisioned EC2 node configure as bamboo server
+    # hosts: launched
+    hosts: bamboo-server
+    become: yes
+    become_user: ravetikyan
+    gather_facts: True
+    vars:
+      dockerRegistryFQDN: "dockerhub.learnship.com:5000"
+    vars_files:
+      - [ "vars/bambooserver.yml" ]
+    tasks:
+        #ToDo download  backup ZIP from cloud based bamboo
+        - name: delete baamboo-server containers
+          docker_container:
+            name: "{{ item }}"
+            state: absent
+          register: container_deleted
+          with_items: 
+            - postgres-bamboo
+            - bamboo-server
+
+        - name: backup bamboo-server's data
+          shell: "tar -czvf bamboo-server-backup-data.`date +%Y%m%d_%H%M%S`.tar.gz bamboo-home postgres"
+          args:
+            chdir: "/Users/ravetikyan/Documents/atlassian"
+          when: container_deleted.changed
+
+        # - name: delete old files
+        #   file: 
+        #     path: "{{ item }}"
+        #     state: absent
+        #   with_items:
+        #     - /Users/ravetikyan/Documents/atlassian/postgres
+        #     - /Users/ravetikyan/Documents/atlassian/bamboo-home
+        #     - /Users/ravetikyan/Documents/atlassian/database
+
+        # - name: unpack backup from data directory
+        #   shell: tar -xzf *.tar.gz -C ./
+        #   args:
+        #     chdir: "/Users/ravetikyan/Documents/atlassian"
+        #   no_log: false
+
+        - name: Pull Bamboo image
+          shell: "docker pull {{ dockerRegistryFQDN }}/bamboo-server:5.14.3.1"
+
+        - name: Pull Postgres image
+          shell: "docker pull postgres:9.4"
+
+        - name: Run Postgres container
+          shell: "docker run -d --name postgres-bamboo -h postgres -v /Users/ravetikyan/Documents/atlassian/database:/postgres_data -v /Users/ravetikyan/Documents/atlassian/postgres/data:/var/lib/postgresql/data -e 'POSTGRES_PASSWORD={{ POSTGRES_PASSWORD }}' -e 'POSTGRES_USER={{ POSTGRES_USER }}' postgres:9.4"
+
+        - name: Upload backed up data into postgres
+          shell: docker exec -i postgres-bamboo bash -c "psql -U {{ POSTGRES_USER }} -d {{ POSTGRES_BAMBOO_DB }} < /postgres_data/dbDump.dmp" > /Users/ravetikyan/Documents/atlassian/postgres-load-data.log
+
+        - name: Update postgres url in bamboo config
+          shell: "sed -i -e 's/localhost:5432/postgres:5432/g' /Users/ravetikyan/Documents/atlassian/bamboo-home/bamboo.cfg.xml"
+
+        - name: change modes of credential files
+          file:
+            path: /Users/ravetikyan/Documents/atlassian/bamboo-home/xml-data/configuration
+            state: directory
+            mode: 0600
+            recurse: yes
+
+        - name: Start bamboo container
+          shell: "docker run -d -p 8085:8085 --link postgres-bamboo:postgres -v /Users/ravetikyan/Documents/atlassian/bamboo-home:/usr/src/bamboo-home --name bamboo-server --hostname bamboo.infra.ls.vu dockerhub.learnship.com:5000/bamboo-server:5.14.3.1"
+
+        - name: Wait for port 8085
+          wait_for: port=8085 timeout=180
+
+        #ToDo: from browser 
+        # 1. set site's base url in http://bamboo.infra.ls.vu:8085/admin/globalConfiguration.action
+        # 2. enable elastic bamboo http://bamboo.infra.ls.vu:8085/admin/elastic/viewElasticConfig.action
+        # 3. set correct pathes for private_key and certificate  http://bamboo.infra.ls.vu:8085/admin/elastic/editElasticConfig.action
+        # 4. set flags to fix artifact location on S3 for each build plan

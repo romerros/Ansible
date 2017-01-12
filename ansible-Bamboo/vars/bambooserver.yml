@@ -1,0 +1,5 @@
+---
+###     aws vars
+POSTGRES_USER: bamboo
+POSTGRES_PASSWORD: bamboo
+POSTGRES_BAMBOO_DB: bamboo
