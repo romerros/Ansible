@@ -1,0 +1,42 @@
+shopwaredb:
+  image: mysql:5.5
+
+  environment:
+    - MYSQL_ROOT_PASSWORD=shopware
+    - MYSQL_USER=shopware
+    - MYSQL_PASSWORD=shopware
+    - MYSQL_DATABASE=shopware
+
+  ports:
+    - "3306:3306"
+
+dbclient:
+  image: mysql:5.5
+  links:
+    - shopwaredb
+
+  command: sh -c 'exec mysql -hshopwaredb -P3306 -uroot -pshopware'
+
+shopware:
+  image: ovip
+
+  environment:
+    - PHPMYADMIN_PW=shopware
+    - DB_USER=shopware
+    - DB_PASSWORD=shopware
+    - DB_DATABASE=shopware
+    - DB_HOST=shopwaredb
+    - DB_PORT=3306
+
+#  volumes:
+#    - ./persistant/mysql:/var/www/html
+
+  links:
+    - shopwaredb
+
+  ports:
+    - "80:80"
+
+  command: cd /var/www/html/build/ &&\
+         ant configure &&\
+         ant build-unit
