@@ -7,7 +7,7 @@
 
 
   3) starting official-vip container
-       docker run -d --name official-vip -p 80:80 --link ovip-db:db --net ovipown_default -e "DB_USER=ovip" -e "DB_PASSWORD=ovip" -e "DB_DATABASE=ovip" -e "DB_HOST=ovip" -e "DB_PORT=3306" -e "PHPMYADMIN_PW=ovip" ovip
+       docker run -d --name official-vip -p 80:80 --link ovip-db:app --net ovipown_default -e "DB_USER=ovip" -e "DB_PASSWORD=ovip" -e "DB_DATABASE=ovip" -e "DB_HOST=ovip" -e "DB_PORT=3306" -e "PHPMYADMIN_PW=ovip" ovip
 
 	   docker exec -it official-vip bash
 	   ant configure
