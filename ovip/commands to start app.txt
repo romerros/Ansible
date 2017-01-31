@@ -1,0 +1,14 @@
+  1) Start database container
+       docker run --name ovipdb -h ovipdbhost -e "MYSQL_ROOT_PASSWORD=ovip" -e "MYSQL_USER=ovip" -e "MYSQL_PASSWORD=ovip" -e "MYSQL_DATABASE=ovip" -v /Users/ravetikyan/Documents/ovip-own/persistant/mysql:/var/lib/mysql mysql:latest
+
+
+  2) Start dbclient container 
+       docker run --name dbclient -p 3306 --link ovipdb:mysql --net ovipown_default mysql:latest sh -c 'exec mysql -h172.17.0.3 -uroot -povip'
+
+
+  3) starting official-vip container
+       docker run -d --name official-vip -p 80:80 --link ovip-db:db --net ovipown_default -e "DB_USER=ovip" -e "DB_PASSWORD=ovip" -e "DB_DATABASE=ovip" -e "DB_HOST=ovip" -e "DB_PORT=3306" -e "PHPMYADMIN_PW=ovip" ovip
+
+	   docker exec -it official-vip bash
+	   ant configure
+       ant build-unit
