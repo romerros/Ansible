@@ -1,47 +1,34 @@
-version: '2'
+ovip-db:
+  image: mysql:5.5
 
-services:
-  ovip-db:
-    image: mysql:latest
-    container_name: ovip-db
-    environment:
-      - MYSQL_ROOT_PASSWORD=ovip
-      - MYSQL_USER=ovip
-      - MYSQL_PASSWORD=ovip
-      - MYSQL_DATABASE=ovip
+  environment:
+    - MYSQL_ROOT_PASSWORD=shopware
+    - MYSQL_USER=shopware
+    - MYSQL_PASSWORD=shopware
+    - MYSQL_DATABASE=shopware
+  # volumes:
+  #  - /var/lib/docker/persistent-volumes/shopware/db:/var/lib/mysql
 
-    volumes:
-      - ./persistant/mysql:/var/lib/mysql
+dbclient:
+  image: mysql:5.5
+  links:
+   - ovip-db:mysql
+  command: sh -c 'sleep 10000; mysql -h"$$MYSQL_PORT_3306_TCP_ADDR" -P"$$MYSQL_PORT_3306_TCP_PORT" -ushopware -pshopware'
+  # command: sh -c 'exec mysql -hmysql -P3306 -ushopware -pshopware'
+  # command: sh -c 'ping mysql'
 
-    ports:
-      - "3306:3306"
-
-  dbclient:
-    image: mysql:5.5
-    container_name: dbclient
-    links:
-      - ovip-db
-
-    #command: sh -c 'exec mysql -hmysql -P3306 -uovip -povip'
-
-  # official-vip:
-  #   image: ovip
-  #   container_name: official-vip
-  #   environment:
-  #     - PHPMYADMIN_PW=ovip
-  #     - DB_USER=ovip
-  #     - DB_PASSWORD=ovip
-  #     - DB_DATABASE=ovip
-  #     - DB_HOST=ovip
-  #     - DB_PORT=3306
-
-  #   volumes:
-  #     - ./persistant/app:/app
-
-  #   links:
-  #     - ovip-db
-
-  #   ports:
-  #     - "80:80"
-
-    #command: bash -c 'cd /app/build/ && ant configure && ant build-unit'
+shopware:
+  image: ovip
+  environment:
+    - PHPMYADMIN_PW=bitte_aendern
+    - DB_USER=shopware
+    - DB_PASSWORD=shopware
+    - DB_DATABASE=shopware
+    - DB_HOST=shopwaredb
+    - DB_PORT=3306
+  # volumes:
+  #  - /var/lib/docker/persistent-volumes/shopware/shopware/var/www/html:/var/www/html
+  links:
+   - ovip-db:shopwaredb
+  ports:
+   - "8000:80"
